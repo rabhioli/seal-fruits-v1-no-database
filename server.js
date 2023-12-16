@@ -1,5 +1,9 @@
 // import express
 const express = require("express")
+// import morgan
+const morgan = require("morgan")
+// import method override
+const methodOverride = require("method-override")
 
 // import our fruits
 // require will return the value of module.exports
@@ -12,10 +16,15 @@ const app = express()
 app.use(express.static("public")) // use a "public" folder for files
 // public/style.css -> /style.css
 // public/app.js -> /app.js
-
 // express.urlencoded (prase url encoded bodies)
 // add the data to req.body
 app.use(express.urlencoded({extended: true}))
+// morgan - log data about each request for debugging
+app.use(morgan("dev"))
+// methodOverride - allows to override form post requests
+// as a different method like PUT or DELETE
+// It will look for a _method url query
+app.use(methodOverride("_method"))
 
 // fruits index route
 // get request to /fruits
@@ -27,12 +36,12 @@ app.get("/fruits", (req, res) => {
     res.render("index.ejs", {fruits})
 })
 
-//New route - render a page with a formn
-//  get request to /fruits/new
+// New Route - Render a page with a form
+// get request to /fruits/new
 // allow us to have a form to create a new fruit
 app.get("/fruits/new", (req, res) => {
-    //render a template with out form
-    // new.ejs = ./views/ + new.ejs
+    // render a template with our form
+    // new.ejs = ./views/ + new.js
     res.render("new.ejs")
 })
 
@@ -57,6 +66,54 @@ app.post("/fruits", (req, res) => {
     // redirect them back to index page
     res.redirect("/fruits")
 })
+
+// DESTROY ROUTE - Deletes a Fruit
+// DELETE -> /fruits/:id
+// deletes the specified fruit, redirects to index
+app.delete("/fruits/:id", (req, res) => {
+    // get the id from params
+    const id = req.params.id
+    // then we'll splice it from the array
+    // arr.splice(index, numOfItemToCut)
+    fruits.splice(id, 1)
+    // redirect back to index
+    res.redirect("/fruits")
+})
+
+// EDIT ROUTE - Render a Form to Edit a Specific Fruit
+// GET to /fruits/:id/edit
+// Render a Form with the existing values filled in
+app.get("/fruits/:id/edit", (req, res) => {
+    // get the id from params
+    const id = req.params.id
+    // get the fruit being updated
+    const fruit = fruits[id]
+    // send the id and fruit over to the template
+    // edit.ejs -> ./views/edit.js
+    res.render("edit.ejs",{fruit, id})
+})
+
+// UPDATE ROUTE - Receive the form data, updates the fruit
+// PUT to /fruits/:id
+// Update the specified fruit, then redirect to index
+app.put("/fruits/:id", (req, res) => {
+    // get the id
+    const id = req.params.id
+    // get the body
+    const body = req.body
+    // convert readyToEat to true or false
+    if(body.readyToEat === "on"){
+        body.readyToEat = true
+    } else {
+        body.readyToEat = false
+    }
+    // swap the old version with the new version
+    fruits[id] = body
+    // redirect back to the index page
+    res.redirect("/fruits")
+})
+
+
 // fruits show route
 // get request to /fruits/:id
 // return a single fruit
@@ -72,7 +129,7 @@ app.get("/fruits/:id", (req, res) => {
     // res.render(template, data)
     // for the template assume "/views/"
     // "show.ejs" =>  ./views/show.ejs
-    res.render("show.ejs", {fruit})
+    res.render("show.ejs", {fruit, id})
     // {fruit} is the same as {fruit:fruit}
 })
 
